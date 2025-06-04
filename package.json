@@ -1,0 +1,99 @@
+{
+  "name": "frpc-gui-client",
+  "version": "1.0.6",
+  "description": "FRP Client GUI Application",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "download-frpc": "powershell -ExecutionPolicy Bypass -File download-frpc.ps1",
+    "build-portable": "electron-builder --win portable --publish=never",
+    "build-installer": "electron-builder --win nsis --publish=never",
+    "build-all": "electron-builder --win --publish=never",
+    "build-dir": "electron-builder --win dir --publish=never",
+    "clean": "rimraf dist",
+    "postinstall": "electron-builder install-app-deps"
+  },
+  "keywords": [
+    "frpc",
+    "gui",
+    "electron"
+  ],
+  "author": "marvinli001",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^27.0.0",
+    "electron-builder": "^24.6.4"
+  },
+  "build": {
+    "appId": "com.marvinli001.frpc-gui",
+    "productName": "FRP Client GUI",
+    "directories": {
+      "output": "dist"
+    },
+    "extraResources": [
+      {
+        "from": "bin/frpc.exe",
+        "to": "bin/frpc.exe"
+      },
+      {
+        "from": "config/",
+        "to": "config/",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "files": [
+      "**/*",
+      "!node_modules/**/*",
+      "!bin/**/*",
+      "!config/**/*",
+      "!logs/**/*",
+      "!dist/**/*",
+      "!*.md",
+      "!.git/**/*",
+      "!download-frpc.ps1",
+      "!verify-frpc.js"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": null,
+      "requestedExecutionLevel": "asInvoker"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "allowElevation": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "FRP Client GUI",
+      "displayLanguageSelector": false,
+      "installerLanguages": [
+        "zh_CN",
+        "en_US"
+      ],
+      "language": "2052",
+      "artifactName": "${productName}-${version}-Setup.${ext}",
+      "deleteAppDataOnUninstall": false
+    },
+    "portable": {
+      "artifactName": "${productName}-${version}-Portable.${ext}"
+    }
+  },
+  "dependencies": {
+    "electron-window-state": "^5.0.3"
+  }
+}

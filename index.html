@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FRP Client GUI</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-left">
+                <h1>🚀 FRP 客户端管理器</h1>
+                <span id="version-info" class="version-info">v1.0.6</span>
+            </div>
+            <div class="header-right">
+                <button id="check-update-btn" class="btn btn-update">🔄 检查更新</button>
+                <div class="status-indicator">
+                    <span id="status-dot" class="status-dot stopped"></span>
+                    <span id="status-text">未连接</span>
+                </div>
+            </div>
+        </header>
+
+        <main>
+            <div class="config-section">
+                <div class="section-header">
+                    <h2>服务器配置</h2>
+                    <div class="header-buttons">
+                        <button id="settings-btn" class="btn btn-settings">⚙️ 设置</button>
+                        <button id="fetch-servers-btn" class="btn btn-fetch-servers">🌐 获取服务器列表</button>
+                    </div>
+                </div>
+                
+                <div class="config-content">
+                    <div class="form-group">
+                        <label for="server-select">选择服务器：</label>
+                        <select id="server-select">
+                            <option value="">请先获取服务器列表...</option>
+                        </select>
+                    </div>
+
+                    <div class="server-info" id="server-info" style="display: none;">
+                        <div class="info-item">
+                            <span class="info-label">地区：</span>
+                            <span id="server-region">-</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">状态：</span>
+                            <span id="server-status">-</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">用户：</span>
+                            <span id="server-users">-</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">描述：</span>
+                            <span id="server-description">-</span>
+                        </div>
+                    </div>
+
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="server-addr">服务器地址：</label>
+                            <input type="text" id="server-addr" placeholder="服务器IP或域名" readonly>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="server-port">服务器端口：</label>
+                            <input type="number" id="server-port" placeholder="7000" readonly>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="token">访问令牌：</label>
+                            <input type="password" id="token" placeholder="请联系管理员获取令牌">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="service-name">服务名称：</label>
+                            <input type="text" id="service-name" placeholder="remote-desktop">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="local-ip">本地IP：</label>
+                            <input type="text" id="local-ip" value="127.0.0.1">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="local-port">本地端口：</label>
+                            <input type="number" id="local-port" placeholder="3389">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="remote-port">远程端口：</label>
+                            <input type="number" id="remote-port" placeholder="6000">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="type">连接类型：</label>
+                            <select id="type">
+                                <option value="tcp">TCP</option>
+                                <option value="udp">UDP</option>
+                                <option value="http">HTTP</option>
+                                <option value="https">HTTPS</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="button-group">
+                        <button id="start-btn" class="btn btn-primary">🚀 开始连接</button>
+                        <button id="stop-btn" class="btn btn-danger" disabled>⏹️ 停止连接</button>
+                        <button id="clear-log-btn" class="btn btn-secondary">🗑️ 清空日志</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="log-section">
+                <h2>连接日志</h2>
+                <div id="log-container" class="log-container">
+                    <div class="log-entry info">
+                        <span class="timestamp">[2025-05-29 05:56:33]</span>
+                        <span class="message">等待开始连接...</span>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- 设置对话框 -->
+    <div id="settings-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>⚙️ 服务器列表设置</h3>
+                <span class="modal-close-settings">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="settings-section">
+                    <h4>服务器列表来源</h4>
+                    <div class="url-input-group">
+                        <label for="server-list-url">服务器列表URL：</label>
+                        <input type="url" id="server-list-url" placeholder="https://example.com/servers.json">
+                        <button id="test-url-btn" class="btn btn-test">🔍 测试连接</button>
+                    </div>
+                    <div class="url-suggestions">
+                        <p>示例链接：</p>
+                        <div class="suggestion-item">
+                            <button class="btn btn-suggestion" data-url="https://raw.githubusercontent.com/marvinli001/frpc-gui-client/main/remote-servers.json">
+                                📁 GitHub (默认)
+                            </button>
+                        </div>
+                        <div class="suggestion-item">
+                            <button class="btn btn-suggestion" data-url="https://gitee.com/marvinli001/frpc-gui-client/raw/main/remote-servers.json">
+                                📁 Gitee (国内镜像)
+                            </button>
+                        </div>
+                        <div class="suggestion-item">
+                            <button class="btn btn-suggestion" data-url="https://cdn.jsdelivr.net/gh/marvinli001/frpc-gui-client@main/remote-servers.json">
+                                📁 jsDelivr CDN
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="settings-section">
+                    <h4>缓存设置</h4>
+                    <div class="cache-info">
+                        <p><strong>缓存状态：</strong><span id="cache-status">检查中...</span></p>
+                        <p><strong>缓存时间：</strong><span id="cache-time">-</span></p>
+                        <button id="clear-cache-btn" class="btn btn-secondary">🗑️ 清空缓存</button>
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h4>连接测试结果</h4>
+                    <div id="test-result" class="test-result" style="display: none;">
+                        <!-- 测试结果显示区域 -->
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="save-settings-btn" class="btn btn-primary">💾 保存设置</button>
+                <button id="cancel-settings-btn" class="btn btn-cancel">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 更新对话框 -->
+    <div id="update-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>🎉 发现新版本</h3>
+                <span class="modal-close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="update-info">
+                    <p><strong>当前版本：</strong><span id="current-version"></span></p>
+                    <p><strong>最新版本：</strong><span id="latest-version"></span></p>
+                </div>
+                <div class="release-notes">
+                    <h4>更新内容：</h4>
+                    <ul id="release-notes-list"></ul>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="download-installer-btn" class="btn btn-primary">📦 下载安装版</button>
+                <button id="download-portable-btn" class="btn btn-secondary">📄 下载便携版</button>
+                <button id="cancel-update-btn" class="btn btn-cancel">稍后提醒</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 服务器列表对话框 -->
+    <div id="servers-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>🌐 远程服务器列表</h3>
+                <span class="modal-close-servers">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div id="servers-info">
+                    <p><strong>数据来源：</strong><span id="servers-source">-</span></p>
+                    <p><strong>列表版本：</strong><span id="servers-version">-</span></p>
+                    <p><strong>更新时间：</strong><span id="servers-updated">-</span></p>
+                </div>
+                <div id="servers-notice" class="notice" style="display: none;"></div>
+                <div id="servers-list-container" class="servers-list-container">
+                    <!-- 动态生成服务器列表 -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="apply-servers-btn" class="btn btn-primary">✅ 应用服务器列表</button>
+                <button id="cancel-servers-btn" class="btn btn-cancel">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="renderer.js"></script>
+</body>
+</html>

@@ -1,0 +1,1133 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    height: 100vh;
+    color: #333;
+    overflow: hidden; /* 完全禁止滚动 */
+}
+
+.container {
+    width: 100%;
+    height: 100vh;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+}
+
+header {
+    background: rgba(255, 255, 255, 0.95);
+    padding: 15px 20px;
+    border-radius: 15px;
+    margin-bottom: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(10px);
+    flex-shrink: 0;
+    height: 70px; /* 固定header高度 */
+}
+
+header h1 {
+    color: #667eea;
+    font-size: 1.8rem;
+    font-weight: 600;
+}
+
+.status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 500;
+    font-size: 0.9rem;
+}
+
+.status-dot {
+    /* 启用硬件加速 */
+    will-change: transform, opacity;
+    transform: translateZ(0); /* 强制使用GPU加速 */
+    backface-visibility: hidden;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+
+.status-dot.running {
+    background-color: #4CAF50;
+}
+
+.status-dot.stopped {
+    background-color: #f44336;
+}
+
+.status-dot.connecting {
+    background-color: #ff9800;
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.1);
+        opacity: 0.7;
+    }
+}
+
+main {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* 强制左右布局 */
+    gap: 15px;
+    flex: 1;
+    min-height: 0;
+    height: calc(100vh - 100px); /* 减去header和padding的高度 */
+}
+
+.config-section, .log-section {
+    background: rgba(255, 255, 255, 0.95);
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(10px);
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.config-section h2, .log-section h2 {
+    margin-bottom: 15px;
+    color: #667eea;
+    border-bottom: 2px solid #667eea;
+    padding-bottom: 8px;
+    font-size: 1.3rem;
+    flex-shrink: 0;
+    height: 45px; /* 固定标题高度 */
+}
+
+.config-content {
+    flex: 1;
+    overflow-y: auto;
+    padding-right: 5px;
+}
+
+.form-group {
+    margin-bottom: 12px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 4px;
+    font-weight: 500;
+    color: #555;
+    font-size: 0.9rem;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 15px;
+}
+
+input, select {
+    width: 100%;
+    padding: 8px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 13px;
+    transition: all 0.3s ease;
+}
+
+input:focus, select:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.button-group {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 8px;
+    margin-top: 15px;
+    flex-shrink: 0;
+}
+
+.btn {
+    padding: 8px 12px;
+    border: none;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+    will-change: transform;
+    transform: translateZ(0);
+    transition: transform 0.15s ease-out;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+}
+
+.btn-danger {
+    background: linear-gradient(135deg, #f44336, #d32f2f);
+    color: white;
+}
+
+.btn-danger:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(244, 67, 54, 0.4);
+}
+
+.btn-secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-secondary:hover:not(:disabled) {
+    background: #5a6268;
+    transform: translateY(-2px);
+}
+
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.log-container {
+    background: #1a1a1a;
+    color: #00ff00;
+    padding: 12px;
+    border-radius: 8px;
+    flex: 1;
+    overflow-y: auto;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    line-height: 1.4;
+    height: calc(100% - 45px); /* 减去标题高度 */
+    contain: strict; /* CSS containment优化 */
+    content-visibility: auto; /* 虚拟滚动优化 */
+}
+
+.log-entry {
+    margin-bottom: 4px;
+    display: flex;
+    gap: 8px;
+    word-wrap: break-word;
+}
+
+.log-entry.error {
+    color: #ff6b6b;
+}
+
+.log-entry.warning {
+    color: #ffd93d;
+}
+
+.log-entry.info {
+    color: #6bcf7f;
+}
+
+.timestamp {
+    color: #888;
+    white-space: nowrap;
+    font-size: 11px;
+    min-width: 130px;
+}
+
+.message {
+    flex: 1;
+    word-break: break-word;
+}
+
+/* 滚动条样式 */
+.log-container::-webkit-scrollbar,
+.config-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+.log-container::-webkit-scrollbar-track,
+.config-content::-webkit-scrollbar-track {
+    background: #2a2a2a;
+    border-radius: 3px;
+}
+
+.log-container::-webkit-scrollbar-thumb,
+.config-content::-webkit-scrollbar-thumb {
+    background: #555;
+    border-radius: 3px;
+}
+
+.log-container::-webkit-scrollbar-thumb:hover,
+.config-content::-webkit-scrollbar-thumb:hover {
+    background: #777;
+}
+
+.config-content::-webkit-scrollbar-track {
+    background: #f0f0f0;
+}
+
+.config-content::-webkit-scrollbar-thumb {
+    background: #c0c0c0;
+}
+
+.config-content::-webkit-scrollbar-thumb:hover {
+    background: #a0a0a0;
+}
+
+/* 只在窗口非常小时才切换到上下布局 */
+@media (max-width: 900px) {
+    main {
+        grid-template-columns: 1fr;
+        height: calc(100vh - 100px);
+    }
+    
+    .config-section, .log-section {
+        min-height: 300px;
+    }
+}
+
+/* 极小屏幕的额外优化 */
+@media (max-width: 600px) {
+    .container {
+        padding: 8px;
+    }
+    
+    header {
+        padding: 10px 15px;
+        height: 60px;
+    }
+    
+    header h1 {
+        font-size: 1.4rem;
+    }
+    
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    main {
+        height: calc(100vh - 85px);
+    }
+}
+
+/* 确保没有额外的滚动 */
+html {
+    height: 100%;
+    overflow: hidden;
+}
+
+/* 防止表单元素造成布局问题 */
+.form-group select,
+.form-group input {
+    max-width: 100%;
+    min-width: 0;
+}
+
+/* 在现有CSS基础上添加以下样式 */
+
+header {
+    background: rgba(255, 255, 255, 0.95);
+    padding: 15px 20px;
+    border-radius: 15px;
+    margin-bottom: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(10px);
+    flex-shrink: 0;
+    height: 80px; /* 增加header高度 */
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.version-info {
+    background: #f0f0f0;
+    color: #666;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.btn-update {
+    background: linear-gradient(135deg, #28a745, #20c997);
+    color: white;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+}
+
+.btn-update:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(40, 167, 69, 0.4);
+}
+
+.btn-update:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* 模态框样式 */
+.modal {
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(5px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    background: white;
+    margin: auto;
+    padding: 0;
+    border-radius: 15px;
+    width: 90%;
+    max-width: 500px;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+    animation: modalSlideIn 0.3s ease;
+    will-change: transform, opacity;
+    transform: translateZ(0);
+    transition: transform 0.2s ease-out, opacity 0.2s ease-out;
+}
+
+.modal-content.show {
+    transform: translateY(0) translateZ(0);
+    opacity: 1;
+}
+
+.modal-content.hide {
+    transform: translateY(-20px) translateZ(0);
+    opacity: 0;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-50px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.modal-header {
+    padding: 20px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h3 {
+    margin: 0;
+    color: #667eea;
+}
+
+.modal-close {
+    color: #aaa;
+    font-size: 24px;
+    font-weight: bold;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.modal-close:hover {
+    color: #667eea;
+}
+
+.modal-body {
+    padding: 20px;
+}
+
+.update-info {
+    margin-bottom: 20px;
+}
+
+.update-info p {
+    margin: 5px 0;
+    font-size: 14px;
+}
+
+.release-notes h4 {
+    margin-bottom: 10px;
+    color: #333;
+}
+
+#release-notes-list {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+}
+
+#release-notes-list li {
+    padding: 5px 0;
+    border-left: 3px solid #667eea;
+    padding-left: 10px;
+    margin-bottom: 5px;
+    background: #f8f9ff;
+    font-size: 13px;
+}
+
+.modal-footer {
+    padding: 20px;
+    border-top: 1px solid #eee;
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+.btn-cancel {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-cancel:hover {
+    background: #5a6268;
+}
+
+/* 响应式调整 */
+@media (max-width: 900px) {
+    .header-left, .header-right {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    header {
+        height: auto;
+        padding: 15px;
+    }
+    
+    .modal-content {
+        width: 95%;
+        margin: 10px;
+    }
+    
+    .modal-footer {
+        flex-direction: column;
+    }
+    
+    main {
+        height: calc(100vh - 120px);
+    }
+}
+
+/* 在现有CSS基础上添加以下样式 */
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #667eea;
+}
+
+.section-header h2 {
+    margin: 0;
+    color: #667eea;
+    font-size: 1.3rem;
+}
+
+.btn-fetch-servers {
+    background: linear-gradient(135deg, #17a2b8, #138496);
+    color: white;
+    padding: 6px 12px;
+    border: none;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+}
+
+.btn-fetch-servers:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(23, 162, 184, 0.4);
+}
+
+.btn-fetch-servers:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.server-info {
+    background: #f8f9ff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 15px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.info-item {
+    display: flex;
+    font-size: 12px;
+}
+
+.info-label {
+    font-weight: 500;
+    color: #666;
+    min-width: 50px;
+}
+
+.status-online {
+    color: #28a745;
+    font-weight: 500;
+}
+
+.status-offline {
+    color: #dc3545;
+    font-weight: 500;
+}
+
+.status-maintenance {
+    color: #ffc107;
+    font-weight: 500;
+}
+
+.notice {
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 6px;
+    padding: 10px;
+    margin-bottom: 15px;
+    font-size: 13px;
+    color: #856404;
+}
+
+.servers-list-container {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.server-item {
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.server-item:hover {
+    border-color: #667eea;
+    background: #f8f9ff;
+}
+
+.server-item.selected {
+    border-color: #667eea;
+    background: #e8ecff;
+}
+
+.server-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.server-name {
+    font-weight: 600;
+    color: #333;
+}
+
+.server-status {
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+.server-details {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    font-size: 12px;
+    color: #666;
+}
+
+.server-description {
+    grid-column: 1 / -1;
+    margin-top: 8px;
+    font-size: 11px;
+    color: #888;
+}
+
+.modal-close-servers {
+    color: #aaa;
+    font-size: 24px;
+    font-weight: bold;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.modal-close-servers:hover {
+    color: #667eea;
+}
+
+/* 只读输入框样式 */
+input[readonly] {
+    background-color: #f8f9fa;
+    color: #6c757d;
+    cursor: not-allowed;
+}
+
+/* 加载状态样式 */
+.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    margin: -10px 0 0 -10px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #667eea;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* 响应式调整 */
+@media (max-width: 900px) {
+    .section-header {
+        flex-direction: column;
+        gap: 10px;
+        align-items: stretch;
+    }
+    
+    .server-info {
+        grid-template-columns: 1fr;
+    }
+    
+    .server-details {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* 在现有CSS基础上添加以下样式 */
+
+.header-buttons {
+    display: flex;
+    gap: 8px;
+}
+
+.btn-settings {
+    background: linear-gradient(135deg, #6c757d, #5a6268);
+    color: white;
+    padding: 6px 12px;
+    border: none;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+}
+
+.btn-settings:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(108, 117, 125, 0.4);
+}
+
+.modal-close-settings {
+    color: #aaa;
+    font-size: 24px;
+    font-weight: bold;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.modal-close-settings:hover {
+    color: #667eea;
+}
+
+.settings-section {
+    margin-bottom: 25px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #eee;
+}
+
+.settings-section:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.settings-section h4 {
+    margin-bottom: 15px;
+    color: #333;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.url-input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.url-input-group label {
+    font-weight: 500;
+    color: #555;
+    font-size: 0.9rem;
+}
+
+.url-input-group input {
+    flex: 1;
+    padding: 10px;
+    border: 2px solid #e0e0e0;
+    border-radius: 6px;
+    font-size: 13px;
+}
+
+.url-input-group input:focus {
+    border-color: #667eea;
+    outline: none;
+}
+
+.btn-test {
+    background: linear-gradient(135deg, #ffc107, #e0a800);
+    color: #333;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 5px;
+    align-self: flex-start;
+}
+
+.btn-test:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(255, 193, 7, 0.4);
+}
+
+.url-suggestions {
+    margin-top: 15px;
+}
+
+.url-suggestions p {
+    margin-bottom: 10px;
+    font-size: 0.9rem;
+    color: #666;
+    font-weight: 500;
+}
+
+.suggestion-item {
+    margin-bottom: 8px;
+}
+
+.btn-suggestion {
+    background: #f8f9fa;
+    color: #495057;
+    border: 1px solid #dee2e6;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    width: 100%;
+    text-align: left;
+}
+
+.btn-suggestion:hover {
+    background: #e9ecef;
+    border-color: #667eea;
+    color: #667eea;
+}
+
+.cache-info {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 10px;
+    align-items: center;
+}
+
+.cache-info p {
+    margin: 5px 0;
+    font-size: 0.9rem;
+}
+
+.cache-info #clear-cache-btn {
+    grid-column: 2;
+    grid-row: 1 / -1;
+    align-self: start;
+}
+
+.test-result {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    padding: 12px;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.test-result.success {
+    background: #d4edda;
+    border-color: #c3e6cb;
+    color: #155724;
+}
+
+.test-result.error {
+    background: #f8d7da;
+    border-color: #f5c6cb;
+    color: #721c24;
+}
+
+.test-result.loading {
+    background: #d1ecf1;
+    border-color: #bee5eb;
+    color: #0c5460;
+}
+
+/* 响应式调整 */
+@media (max-width: 900px) {
+    .header-buttons {
+        flex-direction: column;
+        gap: 5px;
+    }
+    
+    .url-input-group {
+        gap: 8px;
+    }
+    
+    .cache-info {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+    
+    .cache-info #clear-cache-btn {
+        grid-column: 1;
+        grid-row: auto;
+        justify-self: start;
+    }
+}
+
+@media (max-width: 600px) {
+    .settings-section h4 {
+        font-size: 1rem;
+    }
+    
+    .url-input-group input {
+        font-size: 14px;
+        padding: 12px;
+    }
+}
+
+/* 在现有CSS基础上添加以下样式 */
+
+/* 密码状态样式 */
+.password-status {
+    font-size: 10px;
+    font-weight: 500;
+    padding: 2px 6px;
+    border-radius: 10px;
+    margin-left: 8px;
+}
+
+.preset-password {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.manual-password {
+    background: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeaa7;
+}
+
+/* 服务器状态组 */
+.server-status-group {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+/* 预置密码输入框样式 */
+input[data-preset="true"] {
+    background-color: #f8f9fa !important;
+    color: #28a745 !important;
+    border-color: #28a745;
+}
+
+/* 服务器选择下拉框选项样式优化 */
+#server-select option {
+    padding: 8px;
+    font-size: 13px;
+}
+
+/* 服务器信息区域样式优化 */
+.server-info {
+    background: linear-gradient(135deg, #f8f9ff, #e8ecff);
+    border: 1px solid #c5d3ff;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 15px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    position: relative;
+}
+
+.server-info::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #667eea, #764ba2);
+    border-radius: 8px 8px 0 0;
+}
+
+/* 自动登录提示 */
+.auto-login-indicator {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: #28a745;
+    color: white;
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-weight: 500;
+}
+
+/* 令牌输入框状态指示器 */
+.token-status-indicator {
+    position: relative;
+}
+
+.token-status-indicator::after {
+    content: '';
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+
+.token-status-indicator.preset::after {
+    background: #28a745;
+}
+
+.token-status-indicator.manual::after {
+    background: #ffc107;
+}
+
+/* 响应式调整 */
+@media (max-width: 900px) {
+    .server-status-group {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+    }
+    
+    .password-status {
+        align-self: flex-start;
+    }
+}
+
+@media (max-width: 600px) {
+    .server-info {
+        grid-template-columns: 1fr;
+    }
+    
+    .password-status {
+        font-size: 9px;
+        padding: 1px 4px;
+    }
+}
+
+/* 在现有CSS基础上添加按钮状态样式 */
+
+.btn-update.checking {
+    background: linear-gradient(135deg, #6c757d, #5a6268) !important;
+    cursor: not-allowed !important;
+    opacity: 0.7;
+}
+
+.btn-update.checking:hover {
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+/* 版本比较结果显示 */
+.version-comparison {
+    font-size: 12px;
+    color: #666;
+    margin-top: 4px;
+}
+
+.version-comparison.up-to-date {
+    color: #28a745;
+}
+
+.version-comparison.update-available {
+    color: #ffc107;
+}

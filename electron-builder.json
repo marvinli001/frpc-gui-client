@@ -1,0 +1,35 @@
+{
+  "appId": "com.marvinli001.frpc-gui",
+  "productName": "FRP Client GUI",
+  "directories": {
+    "output": "dist"
+  },
+  "extraResources": [
+    {
+      "from": "bin/",
+      "to": "bin/",
+      "filter": ["**/*"]
+    },
+    {
+      "from": "config/",
+      "to": "config/",
+      "filter": ["**/*"]
+    }
+  ],
+  "files": [
+    "**/*",
+    "!node_modules/**/*",
+    "!bin/**/*",
+    "!config/**/*",
+    "!logs/**/*",
+    "!dist/**/*",
+    "!*.md",
+    "!.git/**/*"
+  ],
+  "win": {
+    "target": {
+      "target": "portable",
+      "arch": ["x64"]
+    }
+  }
+}
