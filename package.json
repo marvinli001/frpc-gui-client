@@ -1,6 +1,6 @@
 {
   "name": "frpc-gui-client",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "FRP Client GUI Application",
   "main": "main.js",
   "scripts": {
@@ -22,7 +22,8 @@
   "license": "MIT",
   "devDependencies": {
     "electron": "^27.0.0",
-    "electron-builder": "^24.6.4"
+    "electron-builder": "^24.6.4",
+    "mocha": "^10.0.0"
   },
   "build": {
     "appId": "com.marvinli001.frpc-gui",

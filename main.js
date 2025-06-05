@@ -637,7 +637,6 @@ function createWindow() {
       webSecurity: true,
       cache: false,
       hardwareAcceleration: false,
-      preload: path.join(__dirname, 'preload.js'),
       backgroundThrottling: false,
       enableRemoteModule: false,
       spellcheck: false
@@ -751,7 +750,7 @@ remote_port = ${config.remotePort}
 // IPC 处理器 - 所有处理器都在这里统一注册，确保不重复
 // ===========================================
 
-// 清除所有已存在的处理器
+// 在重新注册之前，先清除这些特定处理器已有的监听器
 ipcMain.removeAllListeners('load-app-settings');
 ipcMain.removeAllListeners('save-app-settings');
 ipcMain.removeAllListeners('test-server-list-url');

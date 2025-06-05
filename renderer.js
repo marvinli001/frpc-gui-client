@@ -754,7 +754,7 @@ class FrpcGuiApp {
             const result = await window.electronAPI.startFrpc(config);
             
             if (result.success) {
-                this.addLogEntry('info', result.stopConnectionessage);
+                this.addLogEntry('info', result.message);
                 this.updateStatus();
             } else {
                 this.addLogEntry('error', result.message);
