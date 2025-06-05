@@ -2,7 +2,7 @@
 
 🚀 一个现代化的 FRP（Fast Reverse Proxy）客户端图形界面管理工具，基于 Electron 构建。
 
-![FRP Client GUI](https://img.shields.io/badge/version-1.0.6-blue.svg)
+![FRP Client GUI](https://img.shields.io/badge/version-1.0.7-blue.svg)
 ![Platform](https://img.shields.io/badge/platform-Windows-lightgrey.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 
