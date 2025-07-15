@@ -1080,54 +1080,90 @@ input[data-preset="true"] {
     background: #ffc107;
 }
 
-/* 响应式调整 */
-@media (max-width: 900px) {
-    .server-status-group {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 4px;
-    }
-    
-    .password-status {
-        align-self: flex-start;
-    }
+/* 状态检测进度条样式 */
+.status-check-progress {
+    background: rgba(255, 255, 255, 0.95);
+    padding: 15px 20px;
+    border-radius: 15px;
+    margin-bottom: 15px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(10px);
 }
 
-@media (max-width: 600px) {
-    .server-info {
-        grid-template-columns: 1fr;
-    }
-    
-    .password-status {
-        font-size: 9px;
-        padding: 1px 4px;
-    }
+.progress-text {
+    font-weight: 500;
+    margin-bottom: 10px;
+    color: #667eea;
 }
 
-/* 在现有CSS基础上添加按钮状态样式 */
-
-.btn-update.checking {
-    background: linear-gradient(135deg, #6c757d, #5a6268) !important;
-    cursor: not-allowed !important;
-    opacity: 0.7;
+.progress-bar {
+    background: #e0e7ff;
+    border-radius: 10px;
+    height: 8px;
+    overflow: hidden;
+    margin-bottom: 10px;
 }
 
-.btn-update.checking:hover {
-    transform: none !important;
-    box-shadow: none !important;
+.progress-fill {
+    background: linear-gradient(90deg, #667eea, #764ba2);
+    height: 100%;
+    border-radius: 10px;
+    transition: width 0.3s ease;
 }
 
-/* 版本比较结果显示 */
-.version-comparison {
-    font-size: 12px;
-    color: #666;
-    margin-top: 4px;
+.current-batch {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
 }
 
-.version-comparison.up-to-date {
-    color: #28a745;
+.batch-item {
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 500;
 }
 
-.version-comparison.update-available {
-    color: #ffc107;
+.batch-item.online {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.batch-item.offline {
+    background: #fef2f2;
+    color: #dc2626;
+}
+
+/* 按钮状态样式 */
+.btn-check-status {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+}
+
+.btn-check-status:hover:not(:disabled) {
+    background: linear-gradient(135deg, #059669 0%, #047857 100%);
+    transform: translateY(-2px);
+}
+
+.btn-check-status:disabled {
+    background: #9ca3af;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* 服务器状态样式 */
+.status-checking {
+    color: #f59e0b;
+    font-weight: 500;
+}
+
+.status-checking::before {
+    content: "⏳ ";
+}
+
+/* 服务器列表项更新样式 */
+.server-item .server-details div:last-child {
+    font-size: 0.85rem;
+    color: #6b7280;
+    margin-top: 5px;
 }

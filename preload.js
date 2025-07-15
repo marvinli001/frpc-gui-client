@@ -28,6 +28,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   loadUserConfig: () => ipcRenderer.invoke('load-user-config'),
   saveUserConfig: (config) => ipcRenderer.invoke('save-user-config', config),
   
+  // TCP Ping 状态检测相关 - 新增
+  pingServer: (serverAddr, serverPort, timeout) => ipcRenderer.invoke('ping-server', serverAddr, serverPort, timeout),
+  checkServersStatus: (servers, options) => ipcRenderer.invoke('check-servers-status', servers, options),
+  
   // 更新相关API
   checkForUpdates: (manual) => ipcRenderer.invoke('check-for-updates', manual),
   downloadUpdate: (url) => ipcRenderer.invoke('download-update', url),
@@ -42,6 +46,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onFrpcStatus: (callback) => ipcRenderer.on('frpc-status', callback),
   onUpdateResult: (callback) => ipcRenderer.on('update-result', callback),
   onShowUpdateDialog: (callback) => ipcRenderer.on('show-update-dialog', callback),
+  onServerStatusProgress: (callback) => ipcRenderer.on('server-status-progress', callback),
   
   // 移除监听器
   removeAllListeners: (channel) => ipcRenderer.removeAllListeners(channel)

@@ -9,6 +9,8 @@ class FrpcGuiApp {
         this.currentServer = null; // 添加当前选中的服务器
         this.userConfig = null; // 新增：用户配置
         this.configSaveTimeout = null; // 新增：配置保存定时器
+        this.statusCheckInProgress = false; // 新增：状态检测进行中标识
+        this.statusCheckResults = new Map(); // 新增：状态检测结果缓存
         this.init();
     }
 
@@ -17,6 +19,7 @@ class FrpcGuiApp {
         this.bindEvents();
         this.updateStatus();
         this.setupLogListeners();
+        this.setupStatusCheckListeners(); // 新增：设置状态检测监听器
         this.addManagementButtons();
         await this.checkFrpcFile();
         await this.initializeVersion();
@@ -32,7 +35,7 @@ class FrpcGuiApp {
         // await this.autoLoadServers(); // 暂时注释掉自动加载，手动测试
     }
 
-        // 启动时自动加载服务器列表 - 添加预置密码说明
+    // 启动时自动加载服务器列表 - 添加预置密码说明
     async autoLoadServers() {
         try {
             this.addLogEntry('info', '正在获取服务器列表...');
@@ -303,6 +306,19 @@ class FrpcGuiApp {
             });
         } else {
             console.error('未找到获取服务器按钮 #fetch-servers-btn');
+        }
+        
+        // 检测状态按钮
+        const checkStatusBtn = document.getElementById('check-status-btn');
+        if (checkStatusBtn) {
+            console.log('找到检测状态按钮，绑定事件');
+            checkStatusBtn.addEventListener('click', (e) => {
+                console.log('检测状态按钮被点击');
+                e.preventDefault();
+                this.manualCheckServersStatus();
+            });
+        } else {
+            console.error('未找到检测状态按钮 #check-status-btn');
         }
 
         // 服务器列表对话框事件
@@ -634,7 +650,7 @@ class FrpcGuiApp {
         }
     }
 
-    // 更新渲染服务器列表 - 显示密码状态
+    // 更新渲染服务器列表 - 显示本地检测状态
     renderServersList(servers) {
         console.log('渲染服务器列表', servers);
         
@@ -651,11 +667,17 @@ class FrpcGuiApp {
             serverItem.className = 'server-item';
             serverItem.dataset.serverId = server.id;
             
-            const statusClass = server.status === 'online' ? 'status-online' : 
-                               server.status === 'maintenance' ? 'status-maintenance' : 'status-offline';
-            
-            const statusText = server.status === 'online' ? '在线' :
-                              server.status === 'maintenance' ? '维护中' : '离线';
+            // 使用本地检测的状态
+            let statusClass, statusText;
+            if (server.lastChecked) {
+                // 已检测过
+                statusClass = server.status === 'online' ? 'status-online' : 'status-offline';
+                statusText = server.status === 'online' ? '在线' : '离线';
+            } else {
+                // 未检测
+                statusClass = 'status-checking';
+                statusText = '未检测';
+            }
             
             const usersInfo = server.status === 'online' ? 
                 `${server.currentUsers || 0}/${server.maxUsers || '∞'}` : '-';
@@ -664,6 +686,10 @@ class FrpcGuiApp {
             const hasPresetPassword = server.auth && server.auth.presetToken;
             const passwordStatus = hasPresetPassword ? '🔑 自动登录' : '🔓 需要密码';
             const passwordClass = hasPresetPassword ? 'preset-password' : 'manual-password';
+            
+            // 添加检测时间信息
+            const lastCheckedInfo = server.lastChecked ? 
+                `检测时间: ${new Date(server.lastChecked).toLocaleString('zh-CN')}` : '未检测';
             
             serverItem.innerHTML = `
                 <div class="server-item-header">
@@ -678,6 +704,7 @@ class FrpcGuiApp {
                     <div><strong>用户:</strong> ${usersInfo}</div>
                     <div><strong>地址:</strong> ${server.serverAddr}:${server.serverPort}</div>
                     <div><strong>类型:</strong> ${(server.supportedTypes || []).join(', ')}</div>
+                    <div><strong>状态:</strong> ${lastCheckedInfo}</div>
                 </div>
                 <div class="server-description">${server.description || ''}</div>
             `;
@@ -698,7 +725,7 @@ class FrpcGuiApp {
         });
     }
 
-    // 应用远程服务器列表 - 统计预置密码服务器
+    // 应用远程服务器列表 - 统计预置密码服务器并检测状态
     async applyRemoteServers() {
         try {
             if (!this.remoteServersData) {
@@ -731,6 +758,11 @@ class FrpcGuiApp {
             }
             
             this.hideServersModal();
+            
+            // 自动检测服务器状态
+            this.addLogEntry('info', '开始检测服务器在线状态...');
+            await this.checkAllServersStatus(this.remoteServersData.servers);
+            
         } catch (error) {
             this.addLogEntry('error', '应用服务器列表失败: ' + error.message);
         }
@@ -764,7 +796,7 @@ class FrpcGuiApp {
         }
     }
 
-        // 新增：重置配置到默认值
+    // 新增：重置配置到默认值
     resetConfigToDefault() {
         const defaultConfig = {
             localIP: '127.0.0.1',
@@ -895,7 +927,7 @@ class FrpcGuiApp {
         this.hideServerInfo();
     }
 
-    // 更新服务器下拉列表填充函数 - 显示密码状态
+    // 更新服务器下拉列表填充函数 - 显示本地检测状态
     populateServerSelect(servers) {
         const select = document.getElementById('server-select');
         if (!select) return;
@@ -915,8 +947,17 @@ class FrpcGuiApp {
             const option = document.createElement('option');
             option.value = server.id;
             
-            const statusEmoji = server.status === 'online' ? '🟢' :
-                               server.status === 'maintenance' ? '🟡' : '🔴';
+            // 使用本地检测的状态，如果没有检测则显示检测中
+            let statusEmoji, statusText;
+            if (server.lastChecked) {
+                // 已检测过
+                statusEmoji = server.status === 'online' ? '🟢' : '🔴';
+                statusText = server.status === 'online' ? '在线' : '离线';
+            } else {
+                // 未检测或正在检测
+                statusEmoji = '⏳';
+                statusText = '检测中';
+            }
             
             // 添加密码状态标识
             const passwordEmoji = (server.auth && server.auth.presetToken) ? '🔑' : '🔓';
@@ -976,7 +1017,7 @@ class FrpcGuiApp {
         }
     }
 
-    // 更新显示服务器信息 - 包含密码状态
+    // 更新显示服务器信息 - 显示本地检测状态
     showServerInfo(server) {
         const infoEl = document.getElementById('server-info');
         if (!infoEl) return;
@@ -989,17 +1030,23 @@ class FrpcGuiApp {
         if (regionEl) regionEl.textContent = server.region || '-';
         
         if (statusEl) {
-            const statusText = server.status === 'online' ? '在线' :
-                              server.status === 'maintenance' ? '维护中' : '离线';
-            const statusClass = server.status === 'online' ? 'status-online' :
-                               server.status === 'maintenance' ? 'status-maintenance' : 'status-offline';
+            let statusText, statusClass;
+            if (server.lastChecked) {
+                // 已检测过
+                statusText = server.status === 'online' ? '在线' : '离线';
+                statusClass = server.status === 'online' ? 'status-online' : 'status-offline';
+            } else {
+                // 未检测
+                statusText = '未检测';
+                statusClass = 'status-checking';
+            }
             
             statusEl.textContent = statusText;
             statusEl.className = statusClass;
         }
         
         if (usersEl) {
-            const usersInfo = server.status === 'online' ? 
+            const usersInfo = server.status === 'online' && server.lastChecked ? 
                 `${server.currentUsers || 0}/${server.maxUsers || '∞'}` : '-';
             usersEl.textContent = usersInfo;
         }
@@ -1009,6 +1056,10 @@ class FrpcGuiApp {
             // 添加密码状态说明
             if (server.auth && server.auth.presetToken) {
                 description += ' (支持自动登录)';
+            }
+            // 添加检测时间
+            if (server.lastChecked) {
+                description += ` | 检测时间: ${new Date(server.lastChecked).toLocaleString('zh-CN')}`;
             }
             descEl.textContent = description;
         }
@@ -1183,7 +1234,8 @@ class FrpcGuiApp {
             });
         }
     }
-        // 新增：处理更新结果
+
+    // 新增：处理更新结果
     handleUpdateResult(result) {
         console.log('处理更新结果:', result);
         
@@ -1245,8 +1297,8 @@ class FrpcGuiApp {
             this.addLogEntry('error', '检查更新失败: ' + error.message);
             this.setUpdateButtonState(false);
         }
-        
     }
+
     // 修复设置更新按钮状态
     setUpdateButtonState(checking) {
         const btn = document.getElementById('check-update-btn');
@@ -1264,6 +1316,7 @@ class FrpcGuiApp {
             }
         }
     }
+
     // 修复显示更新对话框
     showUpdateModal(updateInfo) {
         console.log('显示更新对话框:', updateInfo);
@@ -1310,6 +1363,7 @@ class FrpcGuiApp {
         
         this.addLogEntry('info', `发现新版本 v${updateInfo.remoteVersion}`);
     }
+
     // 添加日志条目
     addLogEntry(type, message) {
         const container = document.getElementById('log-container');
@@ -1514,11 +1568,232 @@ class FrpcGuiApp {
         if (!config.remotePort || config.remotePort <= 0 || config.remotePort > 65535) {
             this.addLogEntry('error', '请输入有效的远程端口 (1-65535)');
             return false;
-        }
+                    }
         
         return true;
     }
+
+    // ===========================================
+    // TCP Ping 状态检测功能
+    // ===========================================
+
+    // 检测单个服务器状态
+    async checkSingleServerStatus(server, timeout = 5000) {
+        try {
+            console.log(`检测服务器状态: ${server.name} (${server.serverAddr}:${server.serverPort})`);
+            
+            if (!window.electronAPI.pingServer) {
+                throw new Error('pingServer API 不可用');
+            }
+            
+            const result = await window.electronAPI.pingServer(server.serverAddr, server.serverPort, timeout);
+            
+            if (result.success) {
+                const status = result.online ? 'online' : 'offline';
+                console.log(`服务器 ${server.name} 状态: ${status}`);
+                
+                // 更新缓存
+                this.statusCheckResults.set(server.id, {
+                    status: status,
+                    timestamp: result.timestamp,
+                    server: server
+                });
+                
+                return {
+                    ...server,
+                    status: status,
+                    lastChecked: result.timestamp
+                };
+            } else {
+                throw new Error(result.error);
+            }
+        } catch (error) {
+            console.error(`检测服务器 ${server.name} 状态失败:`, error);
+            return {
+                ...server,
+                status: 'offline',
+                lastChecked: new Date().toISOString()
+            };
+        }
+    }
+
+    // 批量检测服务器状态
+    async checkAllServersStatus(servers, options = {}) {
+        if (this.statusCheckInProgress) {
+            this.addLogEntry('warning', '状态检测正在进行中，请稍等...');
+            return;
+        }
+        
+        if (!servers || servers.length === 0) {
+            this.addLogEntry('warning', '没有服务器需要检测');
+            return;
+        }
+        
+        this.statusCheckInProgress = true;
+        
+        try {
+            const defaultOptions = {
+                timeout: 5000,
+                concurrency: 10
+            };
+            
+            const checkOptions = { ...defaultOptions, ...options };
+            
+            this.addLogEntry('info', `开始检测 ${servers.length} 个服务器的状态...`);
+            
+            // 显示进度信息
+            this.showStatusCheckProgress(0, servers.length);
+            
+            if (!window.electronAPI.checkServersStatus) {
+                throw new Error('checkServersStatus API 不可用');
+            }
+            
+            const result = await window.electronAPI.checkServersStatus(servers, checkOptions);
+            
+            if (result.success) {
+                this.addLogEntry('info', 
+                    `状态检测完成: 在线 ${result.summary.online}/${result.summary.total} 个服务器`
+                );
+                
+                // 更新服务器列表显示
+                this.updateServersWithStatus(result.servers);
+                
+                return result.servers;
+            } else {
+                throw new Error(result.error);
+            }
+        } catch (error) {
+            console.error('批量检测服务器状态失败:', error);
+            this.addLogEntry('error', `状态检测失败: ${error.message}`);
+        } finally {
+            this.statusCheckInProgress = false;
+            this.hideStatusCheckProgress();
+        }
+    }
+
+    // 显示状态检测进度
+    showStatusCheckProgress(completed, total) {
+        const progressInfo = document.createElement('div');
+        progressInfo.id = 'status-check-progress';
+        progressInfo.className = 'status-check-progress';
+        progressInfo.innerHTML = `
+            <div class="progress-text">正在检测服务器状态... ${completed}/${total}</div>
+            <div class="progress-bar">
+                <div class="progress-fill" style="width: ${(completed / total) * 100}%"></div>
+            </div>
+        `;
+        
+        // 添加到页面顶部
+        const container = document.querySelector('.container');
+        if (container && !document.getElementById('status-check-progress')) {
+            container.insertBefore(progressInfo, container.firstChild);
+        }
+    }
+
+    // 更新状态检测进度
+    updateStatusCheckProgress(completed, total, currentBatch = []) {
+        const progressEl = document.getElementById('status-check-progress');
+        if (progressEl) {
+            const percentage = (completed / total) * 100;
+            progressEl.innerHTML = `
+                <div class="progress-text">正在检测服务器状态... ${completed}/${total}</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: ${percentage}%"></div>
+                </div>
+                ${currentBatch.length > 0 ? `
+                    <div class="current-batch">
+                        ${currentBatch.map(item => 
+                            `<span class="batch-item ${item.status}">${item.name}: ${item.status === 'online' ? '在线' : '离线'}</span>`
+                        ).join('')}
+                    </div>
+                ` : ''}
+            `;
+        }
+    }
+
+    // 隐藏状态检测进度
+    hideStatusCheckProgress() {
+        const progressEl = document.getElementById('status-check-progress');
+        if (progressEl) {
+            progressEl.remove();
+        }
+    }
+
+    // 更新服务器列表的状态显示
+    updateServersWithStatus(updatedServers) {
+        // 更新下拉列表
+        const select = document.getElementById('server-select');
+        if (select && updatedServers) {
+            this.populateServerSelect(updatedServers);
+        }
+        
+        // 更新当前选中服务器的状态显示
+        if (this.currentServer) {
+            const updatedServer = updatedServers.find(s => s.id === this.currentServer.id);
+            if (updatedServer) {
+                this.currentServer = updatedServer;
+                this.showServerInfo(updatedServer);
+            }
+        }
+        
+        // 更新服务器列表对话框（如果正在显示）
+        const serversModal = document.getElementById('servers-modal');
+        if (serversModal && serversModal.style.display !== 'none') {
+            this.renderServersList(updatedServers);
+        }
+    }
+
+    // 设置状态检测监听器
+    setupStatusCheckListeners() {
+        // 监听状态检测进度
+        if (window.electronAPI.onServerStatusProgress) {
+            window.electronAPI.onServerStatusProgress((event, progressData) => {
+                this.updateStatusCheckProgress(
+                    progressData.completed, 
+                    progressData.total, 
+                    progressData.current
+                );
+            });
+        }
+    }
+
+    // 手动检测服务器状态
+    async manualCheckServersStatus() {
+        const select = document.getElementById('server-select');
+        if (!select || select.children.length <= 1) {
+            this.addLogEntry('warning', '请先获取服务器列表');
+            return;
+        }
+        
+        // 从下拉列表中获取当前的服务器列表
+        const servers = [];
+        for (let i = 1; i < select.children.length; i++) { // 跳过第一个默认选项
+            const option = select.children[i];
+            if (option.dataset.server) {
+                try {
+                    const server = JSON.parse(option.dataset.server);
+                    servers.push(server);
+                } catch (error) {
+                    console.error('解析服务器数据失败:', error);
+                }
+            }
+        }
+        
+        if (servers.length === 0) {
+            this.addLogEntry('warning', '没有找到可检测的服务器');
+            return;
+        }
+        
+        this.addLogEntry('info', `开始手动检测 ${servers.length} 个服务器的状态...`);
+        
+        // 执行状态检测
+        await this.checkAllServersStatus(servers, {
+            timeout: 5000,
+            concurrency: 8
+        });
+    }
 }
+
 // 应用初始化
 document.addEventListener('DOMContentLoaded', () => {
     console.log('DOM加载完成，初始化应用');

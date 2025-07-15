@@ -5,6 +5,7 @@ const path = require('path');
 const fs = require('fs');
 const { spawn } = require('child_process');
 const os = require('os');
+const net = require('net'); // 新增：用于TCP连接测试
 
 // 设置自定义用户数据目录，避免缓存权限问题
 const userDataPath = path.join(os.homedir(), '.frpc-gui-client');
@@ -747,6 +748,144 @@ remote_port = ${config.remotePort}
 }
 
 // ===========================================
+// TCP Ping 功能 - 节点状态检测
+// ===========================================
+
+/**
+ * TCP Ping检测单个服务器节点状态
+ * @param {string} host - 服务器地址
+ * @param {number} port - 服务器端口
+ * @param {number} timeout - 超时时间（毫秒）
+ * @returns {Promise<boolean>} - 是否在线
+ */
+function tcpPing(host, port, timeout = 5000) {
+  return new Promise((resolve) => {
+    const socket = new net.Socket();
+    let isResolved = false;
+    
+    // 设置超时
+    const timer = setTimeout(() => {
+      if (!isResolved) {
+        isResolved = true;
+        socket.destroy();
+        resolve(false);
+      }
+    }, timeout);
+    
+    socket.setTimeout(timeout);
+    
+    socket.on('connect', () => {
+      if (!isResolved) {
+        isResolved = true;
+        clearTimeout(timer);
+        socket.destroy();
+        resolve(true);
+      }
+    });
+    
+    socket.on('timeout', () => {
+      if (!isResolved) {
+        isResolved = true;
+        clearTimeout(timer);
+        socket.destroy();
+        resolve(false);
+      }
+    });
+    
+    socket.on('error', () => {
+      if (!isResolved) {
+        isResolved = true;
+        clearTimeout(timer);
+        socket.destroy();
+        resolve(false);
+      }
+    });
+    
+    try {
+      socket.connect(port, host);
+    } catch (error) {
+      if (!isResolved) {
+        isResolved = true;
+        clearTimeout(timer);
+        resolve(false);
+      }
+    }
+  });
+}
+
+/**
+ * 批量检测服务器列表的在线状态
+ * @param {Array} servers - 服务器列表
+ * @param {number} timeout - 单个检测的超时时间
+ * @param {number} concurrency - 并发检测数量
+ * @returns {Promise<Array>} - 带有状态更新的服务器列表
+ */
+async function checkServersStatus(servers, timeout = 5000, concurrency = 10) {
+  if (!servers || !Array.isArray(servers)) {
+    return [];
+  }
+  
+  console.log(`开始检测 ${servers.length} 个服务器的状态，并发数: ${concurrency}`);
+  
+  // 创建检测任务
+  const tasks = servers.map(server => ({
+    server: { ...server },
+    check: () => tcpPing(server.serverAddr, server.serverPort, timeout)
+  }));
+  
+  const results = [];
+  
+  // 分批并发执行检测
+  for (let i = 0; i < tasks.length; i += concurrency) {
+    const batch = tasks.slice(i, i + concurrency);
+    
+    const batchPromises = batch.map(async (task) => {
+      const startTime = Date.now();
+      try {
+        const isOnline = await task.check();
+        const responseTime = Date.now() - startTime;
+        
+        console.log(`服务器 ${task.server.name} (${task.server.serverAddr}:${task.server.serverPort}) - ${isOnline ? '在线' : '离线'} (${responseTime}ms)`);
+        
+        return {
+          ...task.server,
+          status: isOnline ? 'online' : 'offline',
+          lastChecked: new Date().toISOString(),
+          responseTime: responseTime
+        };
+      } catch (error) {
+        console.error(`检测服务器 ${task.server.name} 时出错:`, error);
+        return {
+          ...task.server,
+          status: 'offline',
+          lastChecked: new Date().toISOString(),
+          responseTime: timeout
+        };
+      }
+    });
+    
+    const batchResults = await Promise.all(batchPromises);
+    results.push(...batchResults);
+    
+    // 发送进度更新
+    if (mainWindow) {
+      mainWindow.webContents.send('server-status-progress', {
+        completed: results.length,
+        total: servers.length,
+        current: batchResults.map(r => ({
+          name: r.name,
+          status: r.status,
+          responseTime: r.responseTime
+        }))
+      });
+    }
+  }
+  
+  console.log(`服务器状态检测完成，在线: ${results.filter(r => r.status === 'online').length}/${results.length}`);
+  return results;
+}
+
+// ===========================================
 // IPC 处理器 - 所有处理器都在这里统一注册，确保不重复
 // ===========================================
 
@@ -1089,4 +1228,71 @@ ipcMain.handle('open-logs-folder', async () => {
   const appDataPath = getAppDataPath();
   const { shell } = require('electron');
   await shell.openPath(path.join(appDataPath, 'logs'));
+});
+
+// ===========================================
+// TCP Ping 状态检测处理器
+// ===========================================
+
+// 检测单个服务器状态
+ipcMain.handle('ping-server', async (event, serverAddr, serverPort, timeout = 5000) => {
+  console.log(`主进程: 检测服务器 ${serverAddr}:${serverPort}`);
+  try {
+    const isOnline = await tcpPing(serverAddr, serverPort, timeout);
+    console.log(`主进程: 服务器 ${serverAddr}:${serverPort} ${isOnline ? '在线' : '离线'}`);
+    return {
+      success: true,
+      online: isOnline,
+      serverAddr,
+      serverPort,
+      timestamp: new Date().toISOString()
+    };
+  } catch (error) {
+    console.error(`主进程: 检测服务器 ${serverAddr}:${serverPort} 失败:`, error);
+    return {
+      success: false,
+      error: error.message,
+      serverAddr,
+      serverPort,
+      timestamp: new Date().toISOString()
+    };
+  }
+});
+
+// 批量检测服务器状态
+ipcMain.handle('check-servers-status', async (event, servers, options = {}) => {
+  console.log(`主进程: 收到批量检测请求，服务器数量: ${servers ? servers.length : 0}`);
+  
+  try {
+    const {
+      timeout = 5000,
+      concurrency = 10
+    } = options;
+    
+    if (!servers || !Array.isArray(servers) || servers.length === 0) {
+      return {
+        success: false,
+        error: '无效的服务器列表'
+      };
+    }
+    
+    const updatedServers = await checkServersStatus(servers, timeout, concurrency);
+    
+    return {
+      success: true,
+      servers: updatedServers,
+      summary: {
+        total: updatedServers.length,
+        online: updatedServers.filter(s => s.status === 'online').length,
+        offline: updatedServers.filter(s => s.status === 'offline').length,
+        timestamp: new Date().toISOString()
+      }
+    };
+  } catch (error) {
+    console.error('主进程: 批量检测服务器状态失败:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
 });
