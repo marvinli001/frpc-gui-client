@@ -2,7 +2,7 @@
 
 🚀 一个现代化的 FRP（Fast Reverse Proxy）客户端图形界面管理工具，基于 Electron 构建。
 
-![FRP Client GUI](https://img.shields.io/badge/version-1.0.7-blue.svg)
+![FRP Client GUI](https://img.shields.io/badge/version-1.0.8-blue.svg)
 ![Platform](https://img.shields.io/badge/platform-Windows-lightgrey.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 
@@ -52,8 +52,8 @@
 #### 方式一：下载预编译版本
 1. 前往 [Releases](https://github.com/marvinli001/frpc-gui-client/releases) 页面
 2. 下载最新版本：
-   - `FRP-Client-GUI-x.x.x-Setup.exe` - 安装版
-   - `FRP-Client-GUI-x.x.x-Portable.exe` - 便携版
+   - '[FRP-Client-GUI-1.0.8-Setup.exe](https://github.com/marvinli001/frpc-gui-client/releases/download/1.0.8/FRP.Client.GUI-1.0.8-Setup.exe)' - 安装版
+   - '[FRP-Client-GUI-1.0.8-Portable.exe](https://github.com/marvinli001/frpc-gui-client/releases/download/1.0.8/FRP.Client.GUI-1.0.8-Portable.exe)' - 便携版
 
 #### 方式二：从源码构建
 ```bash
@@ -164,7 +164,16 @@ npm run clean
 
 ## 📝 版本历史
 
-### v1.0.6 (当前版本)
+### v1.0.8 (当前版本)
+- 🔧 重构代码结构，提高可读性和可维护性
+- ✨ 优化服务器状态检测逻辑，提高检测速度和稳定性
+
+### v1.0.7
+- 🧪 新增基础单元测试框架
+- 🛠️ 修复窗口配置重复 preload 问题
+- 🔧 优化连接成功日志输出信息
+
+### v1.0.6
 - ✨ 新增用户配置自动保存功能
 - 🔧 优化界面响应性和用户体验
 - 🐛 修复连接状态显示问题
@@ -175,10 +184,6 @@ npm run clean
 - 🌐 多源服务器列表获取
 - 💾 智能缓存机制
 - 🔄 自动更新检查
-
-## 🤝 贡献指南
-
-欢迎提交 Issue 和 Pull Request！
 
 ### 提交 Issue
 - 描述问题的具体表现
