@@ -52,8 +52,8 @@
 #### 方式一：下载预编译版本
 1. 前往 [Releases](https://github.com/marvinli001/frpc-gui-client/releases) 页面
 2. 下载最新版本：
-   - '[FRP-Client-GUI-1.0.8-Setup.exe](https://github.com/marvinli001/frpc-gui-client/releases/download/1.0.8/FRP.Client.GUI-1.0.8-Setup.exe)' - 安装版
-   - '[FRP-Client-GUI-1.0.8-Portable.exe](https://github.com/marvinli001/frpc-gui-client/releases/download/1.0.8/FRP.Client.GUI-1.0.8-Portable.exe)' - 便携版
+   - [FRP-Client-GUI-1.0.8-Setup.exe](https://github.com/marvinli001/frpc-gui-client/releases/download/1.0.8/FRP.Client.GUI-1.0.8-Setup.exe) - 安装版
+   - [FRP-Client-GUI-1.0.8-Portable.exe](https://github.com/marvinli001/frpc-gui-client/releases/download/1.0.8/FRP.Client.GUI-1.0.8-Portable.exe) - 便携版
 
 #### 方式二：从源码构建
 ```bash
